@@ -29,7 +29,9 @@ download_default_wordlists:
 
 	mkdir -p ./output
 	mkdir -p ./output/wpscan
-	mkdir -p ./output/wpscan_brute
+	mkdir -p ./output/pass
+	mkdir -p ./output/user
+	mkdir -p ./output/wpscan_brutal
 	mkdir -p ./output/cracked
 
 	#Dorks

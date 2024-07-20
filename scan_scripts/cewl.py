@@ -48,7 +48,6 @@ async def run(raw_args):
         web_instance = (await session.execute(
             select(Web).options(selectinload(Web.file_lists)).filter_by(wp_link=args.wp_link)
         )).scalars().first()
-        print(web_instance.file_lists)
         if file_list not in web_instance.file_lists:
             web_instance.file_lists.append(file_list)
             await session.commit()

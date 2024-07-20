@@ -75,7 +75,8 @@ class FileList(Base):
 class BrutalRun(Base):
     __tablename__ = 'BRUTAL_RUN'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    file_list_path = Column(String, ForeignKey('FILE_LIST.path'))
+    user_list = Column(String, ForeignKey('FILE_LIST.path'))
+    pass_list = Column(String, ForeignKey('FILE_LIST.path'))
     wp_link = Column(String, ForeignKey('WEB.wp_link'))
     date = Column(Date, default=date.today)
     path = Column(String)
@@ -108,8 +109,26 @@ async def getWeb_whereNull(null_column):
 # functions to validate
 async def valid_wp_link(wp_link):
     async with get_session() as session:
-        print(wp_link)
         result = await session.execute(select(Web).filter(Web.wp_link == wp_link))
         web_instance = result.scalars().first()
-        print(web_instance)
         return bool(web_instance)
+
+
+async def get_or_create_list(session, list_type, file_list_path):
+    file_list = (await session.execute(
+        select(FileList).filter_by(path=file_list_path, list_type=list_type)
+    )).scalars().first()
+
+    if not file_list:
+        file_list = FileList(
+            path=file_list_path,
+            list_type=list_type
+        )
+        session.add(file_list)
+        await session.commit()
+    return file_list
+
+async def get_webs():
+    async with get_session() as session:
+        result = await session.execute(select(Web))
+        return result.scalars().all()

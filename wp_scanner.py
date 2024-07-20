@@ -7,7 +7,7 @@ from input_parser import InputParser
 from sqlalchemy import update, select
 
 from wp_config import CONFIG
-from wp_db import Web, get_session, getWeb_whereNull
+from wp_db import Web, get_session, getWeb_whereNull, get_webs
 from wp_log import print_e, print_ok
 
 conf = CONFIG['wp_scanner']
@@ -20,18 +20,18 @@ def get_args():
 
 
     #parser.add_argument("--enum", type=str, help="<Web.wp_link> WPScan")
-    #parser.add_argument("--brute", type=str,  help="<Web.wp_link> brute")
+    #parser.add_argument("--brutal", type=str,  help="<Web.wp_link> brutal")
     #parser.add_argument("--cewl", type=str, help="<Web.wp_link> cewl")
     #parser.add_argument("--wpscan_extract", type=str, help="<Web.wpscan>")
 
 
     parser.add_argument("--enum_all", action="store_true")
-    parser.add_argument("--brute_all", action="store_true")
+    parser.add_argument("--brutal_all", action="store_true")
     parser.add_argument("--cewl_all", action="store_true")
     parser.add_argument("--save_cracked_all", action="store_true")
 
     parser.add_argument("--scan_all", action="store_true",
-                        help="--enum_all --brute_all --cewl_all")
+                        help="--enum_all --brutal_all --cewl_all")
 
     args, unknown = parser.parse_known_args()
     return parser, args
@@ -92,7 +92,7 @@ class AsyncScanner:
             worker.cancel()
 
 async def scan_by_script(script_name, script_args):
-    print_ok(f"Running script {script_name} with {script_args}")
+    #print_ok(f"Running script {script_name} with {script_args}")
     if not script_args:
         script_args = ""
     script_path = f"./scan_scripts/{script_name}.py"
@@ -108,6 +108,7 @@ async def scan_by_script(script_name, script_args):
     else:
         raise AttributeError(f"The script {script_name}.py does not have an async 'run' function.")
 
+
 async def main(print_help=False):
     parser, args = get_args()
     parser.print_help() if print_help else None
@@ -116,21 +117,21 @@ async def main(print_help=False):
 
     scanner = AsyncScanner()
     if args.enum_all:
-        webs = getWeb_whereNull(Web.wpscan)
+        webs = await getWeb_whereNull(Web.wpscan)
         await scanner.start_workers('enum',webs=webs)
-    if args.brute_all:
-        from scan_scripts.brutal import get_webs_without_brutal_run
-        webs = await get_webs_without_brutal_run()
-        await scanner.start_workers('brute',webs=webs)
+    if args.brutal_all:
+        webs = await get_webs()
+        await scanner.start_workers('brutal',script_args=f" --skip_no_xmlrcp {args.script_args} ",webs=webs)
     if args.cewl_all:
         from scan_scripts.cewl import webs_without_cewl
         webs = await webs_without_cewl()
         await scanner.start_workers('cewl',webs=webs)
     if args.save_cracked_all:
         await scanner.start_workers('save_cracked')
+
     #if args.scan_all:
     #    await scanner.start_workers('enum')
-    #    await scanner.start_workers('brute')
+    #    await scanner.start_workers('brutal')
     #    await scanner.start_workers('cewl')
 
 

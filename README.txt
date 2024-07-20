@@ -31,19 +31,19 @@ QUICK START
     a/ check database, get wp_link
     b/ python wp_scanner --script "enum" --script_args ' --wp_link <WEB.wp_link> '
     c/ python wp_scanner --cewl "<WEB.wp_link>"
-    d/ python wp_scanner --brute "<WEB.wp_link>" "<FILE_LIST.name/FILE_LIST.path>"
+    d/ python wp_scanner --brutal "<WEB.wp_link>" "<FILE_LIST.name/FILE_LIST.path>"
 
 8/ scan - option 1 - scan all wp_links
 OPTION 1 - scan one wp_link
     a/ python wp_scanner --enum_all
     b/ python wp_scanner --cewl_all
-    c/ python wp_scanner --brute_default_all
-    / python wp_scanner --brute_cewl_all
+    c/ python wp_scanner --brutal_default_all
+    / python wp_scanner --brutal_cewl_all
 
 ----------------
 ULTRAQUICK START
 +++++++++++++
-#TODO - make make ultraquickstart (do automaticcaly all from quict start)
+#TODO - make make ultraquickstart (do automaticcaly all from quick start)
 
 -----------------
 FOR DEVELOPERS
