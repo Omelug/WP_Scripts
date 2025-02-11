@@ -8,6 +8,8 @@ from wp_db import get_session, Web
 from wp_log import print_e
 from scripts.wp_scanner import run_command
 
+__description__ = """ Enumerate WordPress site with WPScan"""
+
 #extract users from wpscan report
 async def user_extract(wp_link): #wp_link needs to be valid
     async with get_session() as session:

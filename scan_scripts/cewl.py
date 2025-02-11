@@ -9,6 +9,8 @@ from wp_db import get_session, Web, FileList, CewlList, valid_wp_link, web_to_li
 from wp_log import print_saved, print_e
 from scripts.wp_scanner import run_command
 
+__description__ = """ Generate cewl wordlists for WordPress site """
+
 def get_args(raw_args):
     parser = InputParser(description="Cewl Script")
     parser.add_argument('--wp_link', type=str, required=True, help='WordPress link for the enum script')
@@ -75,15 +77,11 @@ async def run(raw_args):
 # get from database webs that do not have cewl list yet
 async def webs_without_cewl():
     async with get_session() as session:
-        # Aliased to avoid conflicts in the query
-        file_list_alias = aliased(FileList)
-        web_to_list_alias = aliased(web_to_list)
-
         query = select(Web).where(
             ~exists().where(
-                (Web.wp_link == web_to_list_alias.c.web_link) &
-                (web_to_list_alias.c.list_path == file_list_alias.path) &
-                (file_list_alias.list_type == "cewl")
+                (Web.wp_link == web_to_list.c.web_link) &
+                (web_to_list.c.list_path == FileList.path) &
+                (FileList.list_type == "cewl")
             )
         )
         result = await session.execute(query)
