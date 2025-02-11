@@ -49,7 +49,6 @@ def get_args(raw_args):
 
 # scan
 async def run(raw_args):
-
     args = get_args(raw_args)
 
     output_path = f"{CONFIG['wp_hub']['output_folder']}wpscan/{urlparse(args.wp_link).netloc}.json"

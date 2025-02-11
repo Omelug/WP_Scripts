@@ -19,7 +19,6 @@ from wp_log import print_e, print_saved, print_ow
 
 __description__ = """"
     For scan and manage dorks for find vulnerable wordpress sites
-    
 """
 conf = CONFIG['wp_dorker']
 
@@ -30,7 +29,6 @@ def get_args():
     parser.add_argument("--add_dork_wizard", action="store_true", help="Add dork (with hints)")
     parser.add_argument("--add_dorks_auto", action="store_true", help="Add all dork list from ./wordlists/dorks/")
     parser.add_argument("--scan_dork_list", type=str, help="dork list <path|name>, results in link_list and table", required=False)
-    #parser.add_argument("--only_scan",action="store_true", help="TODO only scan dork list to link_list, not to web table")
 
     args, unknown = parser.parse_known_args()
     return parser, args, unknown
@@ -78,6 +76,7 @@ async def find_unique_wordpress_instances(urls):
 
     return wordpress_sites
 
+# Add dork list to database
 async def add_dork_list(path:str, name=None, description=None):
     target_path = os.path.join('../wordlists/dorks/', os.path.basename(path))
     if not os.path.abspath(path) == os.path.abspath(target_path):
@@ -116,7 +115,8 @@ async def add_dork_wizard():
     except KeyboardInterrupt:
         print_e("\nDork was not saved")
 
-async def dork_list_to_webs(session, wp_links: set):
+# Add data from wp list to web table
+async def wp_list_to_webs(session, wp_links: set):
     dork_links = (await session.execute(
         select(FileList).filter(FileList.list_type == "dork")
     )).scalars().first()
@@ -133,6 +133,7 @@ async def dork_list_to_webs(session, wp_links: set):
             dork_links.webs.append(web_entry)
     await session.commit()
 
+
 async def scan_dork_list( dork_list: str ,add_to_web=True):
     # get dork list by name or path
     async with get_session() as session:
@@ -147,7 +148,7 @@ async def scan_dork_list( dork_list: str ,add_to_web=True):
         print_e("Dork list not found by name or path ")
         return
 
-    #link,list aredy exists?
+    #link, list alredy exists? --> check if rewrite
     output_path = f"{CONFIG['wp_hub']['wordlist_folder']}wp_link/{os.path.basename(dork_list.path)}"
     if os.path.exists(output_path):
         if not conf['rewrite_link_list']:
@@ -157,14 +158,15 @@ async def scan_dork_list( dork_list: str ,add_to_web=True):
         else:
             print_ow(f"Overwriting {output_path}")
 
-    wp_link_set = set()
+    wp_link_set = set() # scan links
     with open(dork_list.path, 'r') as file:
         dork_set = set(file.read().splitlines())
         for dork in dork_set:
             dork_whole = f"{dork} {conf['dork_filter']}"
             target = functools.partial(dorkScanner.google_search, dork_whole)
+            #TODO print error requests like 429 (Too many requests)
             new_results = dorkScanner.run_pool(target=target, query=dork_whole,
-                                               processes=1, pages=1, engine="google")
+                                               processes=1, pages=1, engine="bing")
             # change to only links
             for sublist in new_results:
                 for url in sublist:
@@ -175,7 +177,8 @@ async def scan_dork_list( dork_list: str ,add_to_web=True):
     #get only unique wordpress instances
     wp_link_set = find_unique_wordpress_instances(wp_link_set)
 
-    # create link list file
+
+    # create link list file and save it ot database
     with open(output_path, 'w+') as file:
             file.write("\n".join(wp_link_set))
     print_saved(f"link list to {output_path}")
@@ -188,11 +191,11 @@ async def scan_dork_list( dork_list: str ,add_to_web=True):
         ).on_conflict_do_nothing())
         await session.commit()
 
-        # add domains to database
+        # add wp_links to database
         if add_to_web:
-            await dork_list_to_webs(session, wp_link_set)
+            await wp_list_to_webs(session, wp_link_set)
 
-
+#print table of dork lists to stdout
 async def print_dork_list_list():
     print(f"Name\t./path\t(description)")
     print("-"*60)
