@@ -1,14 +1,11 @@
 import asyncio
 import importlib.util
-import json
 import os
-from urllib.parse import urlparse
 from input_parser import InputParser
-from sqlalchemy import update, select
 
 from wp_config import CONFIG
-from wp_db import Web, get_session, getWeb_whereNull, get_webs
-from wp_log import print_e, print_ok
+from wp_db import Web, getWeb_whereNull, get_webs
+from wp_log import print_e
 
 conf = CONFIG['wp_scanner']
 
@@ -18,12 +15,10 @@ def get_args():
     parser.add_argument('--scan', type=str, help='Name of the script to run')
     parser.add_argument('--script_args', type=str, default="", help='Arguments for the script')
 
-
     #parser.add_argument("--enum", type=str, help="<Web.wp_link> WPScan")
     #parser.add_argument("--brutal", type=str,  help="<Web.wp_link> brutal")
     #parser.add_argument("--cewl", type=str, help="<Web.wp_link> cewl")
     #parser.add_argument("--wpscan_extract", type=str, help="<Web.wpscan>")
-
 
     parser.add_argument("--enum_all", action="store_true")
     parser.add_argument("--brutal_all", action="store_true")
@@ -34,7 +29,7 @@ def get_args():
                         help="--enum_all --brutal_all --cewl_all")
 
     args, unknown = parser.parse_known_args()
-    return parser, args
+    return parser, args, unknown
 
 
 async def run_command(full_command, print_output=True):
@@ -92,7 +87,6 @@ class AsyncScanner:
             worker.cancel()
 
 async def scan_by_script(script_name, script_args):
-    #print_ok(f"Running script {script_name} with {script_args}")
     if not script_args:
         script_args = ""
     script_path = f"./scan_scripts/{script_name}.py"
@@ -110,8 +104,11 @@ async def scan_by_script(script_name, script_args):
 
 
 async def main(print_help=False):
-    parser, args = get_args()
-    parser.print_help() if print_help else None
+    parser, args, _ = get_args()
+
+    if print_help:
+        parser.print_help()
+        exit(0)
 
     await scan_by_script(args.scan, args.script_args) if args.scan else None
 

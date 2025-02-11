@@ -1,11 +1,11 @@
-import asyncio
 import functools
 import os
 import shutil
 from datetime import datetime
 from urllib.parse import urlparse
+import aiohttp
+import asyncio
 
-import requests
 from bs4 import BeautifulSoup
 from dork_scanner import dorkScanner
 from input_parser import InputParser
@@ -16,61 +16,74 @@ from wp_config import CONFIG
 from wp_db import get_session, Web, FileList
 from wp_log import print_e, print_saved, print_ow
 
+
+__description__ = """"
+    For scan and manage dorks for find vulnerable wordpress sites
+    
+"""
 conf = CONFIG['wp_dorker']
 
 def get_args():
-    parser = InputParser(usage=" --add_dork  for add dork list by name\n"
-                                           "scan with --scan_dork_list <name>")
-    parser.add_argument("--print_dork_lists", action="store_true", help="print dork lists")
-    parser.add_argument("--add_dork", action="store_true", help="Add dork (input manual)")
+    parser = InputParser(usage=" --add_dork_wizard to add dork list\n"
+                                           "\tscan with --scan_dork_list <dork_list_name>")
+    parser.add_argument("--print_dork_lists", action="store_true", help="print saved dork lists")
+    parser.add_argument("--add_dork_wizard", action="store_true", help="Add dork (with hints)")
     parser.add_argument("--add_dorks_auto", action="store_true", help="Add all dork list from ./wordlists/dorks/")
     parser.add_argument("--scan_dork_list", type=str, help="dork list <path|name>, results in link_list and table", required=False)
     #parser.add_argument("--only_scan",action="store_true", help="TODO only scan dork list to link_list, not to web table")
 
-    args, _ = parser.parse_known_args()
-    return parser, args
+    args, unknown = parser.parse_known_args()
+    return parser, args, unknown
 
-
-def is_wordpress_site(url):
+#Check if site is wordpress
+async def is_wordpress_site(url, session):
     try:
-        response = requests.get(url, timeout=5)
-        if response.status_code == 200:
-            if 'wp-login.php' in response.text or 'wp-content/' in response.text:
-                return True
+        async with session.get(url, timeout=5) as response:
+            if response.status == 200:
+                text = await response.text()
+                if 'wp-login.php' in text or 'wp-content/' in text:
+                    return True
 
-            soup = BeautifulSoup(response.content, 'html.parser')
-            generator_meta = soup.find('meta', attrs={'name': 'generator'})
-            if generator_meta and 'WordPress' in generator_meta.get('content', ''):
-                return True
-    except requests.RequestException:
+                soup = BeautifulSoup(text, 'html.parser')
+                generator_meta = soup.find('meta', attrs={'name': 'generator'})
+                if generator_meta and 'WordPress' in generator_meta.get('content', ''):
+                    return True
+    except aiohttp.ClientError:
         pass
     return False
 
+# get root of wordpress site
 def get_root_url(url):
     parsed_url = urlparse(url)
     root_url = f"{parsed_url.scheme}://{parsed_url.netloc}/"
     return root_url
 
-
-def find_unique_wordpress_instances(urls):
+#filter onlyunique wordpress sites
+async def find_unique_wordpress_instances(urls):
     unique_roots = set()
     wordpress_sites = set()
 
-    for url in urls:
-        root_url = get_root_url(url)
-        if root_url not in unique_roots:
-            unique_roots.add(root_url)
-            if is_wordpress_site(root_url):
+    async with aiohttp.ClientSession() as session:
+        tasks = []
+        for url in urls:
+            root_url = get_root_url(url)
+            if root_url not in unique_roots:
+                unique_roots.add(root_url)
+                tasks.append(is_wordpress_site(root_url, session))
+
+        results = await asyncio.gather(*tasks)
+        for root_url, is_wp in zip(unique_roots, results):
+            if is_wp:
                 wordpress_sites.add(root_url)
 
     return wordpress_sites
 
 async def add_dork_list(path:str, name=None, description=None):
-    target_path = os.path.join('./wordlists/dorks/', os.path.basename(path))
+    target_path = os.path.join('../wordlists/dorks/', os.path.basename(path))
     if not os.path.abspath(path) == os.path.abspath(target_path):
         if os.path.exists(target_path):
             print_e("File already exists in dork folder, rewriting")
-        os.makedirs('./wordlists/dorks/', exist_ok=True)
+        os.makedirs('../wordlists/dorks/', exist_ok=True)
         shutil.copy(path, target_path)
         print(f"File copied to {target_path}")
 
@@ -87,21 +100,21 @@ async def add_dork_list(path:str, name=None, description=None):
         if added_list.rowcount == 0:
             print_e(f"No new dork - {name} already exists")
 
-async def add_dork_list_manual():
+async def add_dork_wizard():
     try:
         path = input("Dork file_path: ")
         while not os.path.exists(path):
             print("Path does not exist. Please enter a valid path.")
             path = input("Dork file_path: ")
         path = os.path.relpath(path)
-
-        name = input("Enter the name (enter to same): ") or None
+        print(f"Path: {path}")
+        name = input("Enter the name (Press Enter to same like file): ") or None
         if name is None:
             name = os.path.splitext(os.path.basename(path))[0]
-        description = input("Enter the description (enter to skip): ") or None
+        description = input("Enter the description (Press Enter to skip): ") or None
         await add_dork_list(f"./{path}", name, description)
     except KeyboardInterrupt:
-        print_e("Dork was not saved")
+        print_e("\nDork was not saved")
 
 async def dork_list_to_webs(session, wp_links: set):
     dork_links = (await session.execute(
@@ -193,22 +206,23 @@ async def print_dork_list_list():
             print(f"{r.name}\t{r.path}\t" + (f"({r.description})" if r.description else ""))
 
 async def main(print_help=False):
-    parser, args = get_args()
+    parser, args, _ = get_args()
 
     if print_help:
         parser.print_help()
         exit(0)
 
+    # adding dork lists
     if args.print_dork_lists:
         await print_dork_list_list()
-
-    if args.add_dork:
-        await add_dork_list_manual()
+    if args.add_dork_wizard:
+        await add_dork_wizard()
     if args.add_dorks_auto:
         dork_folder = './wordlists/dorks/'
         for dork_file in os.listdir(dork_folder):
             await add_dork_list(f"{dork_folder}{dork_file}", os.path.splitext(os.path.basename(dork_file))[0])
 
+    #scanning dork list
     if args.scan_dork_list:
         try:
             await scan_dork_list(args.scan_dork_list)

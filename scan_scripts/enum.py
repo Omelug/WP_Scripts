@@ -6,9 +6,9 @@ from sqlalchemy import update, select
 from wp_config import CONFIG
 from wp_db import get_session, Web
 from wp_log import print_e
-from wp_scanner import run_command
+from scripts.wp_scanner import run_command
 
-
+#extract users from wpscan report
 async def user_extract(wp_link): #wp_link needs to be valid
     async with get_session() as session:
         user_pass_path = f"{CONFIG['wp_hub']['output_folder']}cracked/{urlparse(wp_link).netloc}.txt"
@@ -38,12 +38,17 @@ async def user_extract(wp_link): #wp_link needs to be valid
         )
         await session.commit()
 
-async def run(raw_args):
+def get_args(raw_args):
     parser = InputParser(description="Enum Script")
     parser.add_argument('--wp_link', type=str, required=True, help='WordPress link for the enum script')
     parser.add_argument('--overwrite', action="store_true")
     parser.add_argument('--api', type=str, help='WPSCan API key')
-    args = parser.parse_args(raw_args.split())
+    return parser.parse_args(raw_args.split())
+
+# scan
+async def run(raw_args):
+
+    args = get_args(raw_args)
 
     output_path = f"{CONFIG['wp_hub']['output_folder']}wpscan/{urlparse(args.wp_link).netloc}.json"
     if not args.overwrite and os.path.exists(output_path):
@@ -56,6 +61,7 @@ async def run(raw_args):
 
     await run_command(full_command)
 
+    #wpascan runned succesfully, save it to database
     async with get_session() as session:
         await session.execute(
             update(Web).where(Web.wp_link == args.wp_link)
@@ -63,5 +69,5 @@ async def run(raw_args):
         )
         await session.commit()
 
-    await user_extract(args.wp_link)
+    await user_extract(args.wp_link) #extract users from wpscan report
 

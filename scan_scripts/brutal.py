@@ -3,14 +3,13 @@ import json
 import os
 from urllib.parse import urlparse
 from input_parser import InputParser
-from sqlalchemy import select, exists
+from sqlalchemy import select
 from sqlalchemy.orm import selectinload
-
 import wp_db
 from wp_config import CONFIG
-from wp_db import get_session, Web, FileList, valid_wp_link, BrutalRun
-from wp_log import print_e, print_s
-from wp_scanner import run_command
+from wp_db import get_session, Web, valid_wp_link, BrutalRun
+from wp_log import print_e
+from scripts.wp_scanner import run_command
 
 async def run(raw_args):
     parser = InputParser(description="Brutal Script")
@@ -18,7 +17,6 @@ async def run(raw_args):
     parser.add_argument("--pass_list", type=str, required=True)
     parser.add_argument("--user_list", type=str)
     parser.add_argument("--skip_no_xmlrcp", action="store_false")
-
     parser.add_argument('--overwrite', action="store_true")
 
     args = parser.parse_args(raw_args.split())
@@ -129,12 +127,3 @@ async def brutal(wp_link, user_list=None, pass_list=None, skip_no_xmlrcp=False, 
 
         session.add(brutal_run)
         await session.commit()
-
-""" async def get_webs_without_brutal_run(file_list_path):
-    async with get_session() as session:
-        return (await session.execute(
-            select(Web).where(
-                ~exists().where(Web.wp_link == BrutalRun.wp_link && FileList.path == file_list_path)
-            )
-        )).scalars().all()
-"""

@@ -42,20 +42,15 @@ Base = declarative_base()
 web_to_list = Table('web_to_list', Base.metadata,
                     Column('list_path', String, ForeignKey('FILE_LIST.path'), primary_key=True),
                     Column('web_link', String, ForeignKey('WEB.wp_link'), primary_key=True),
-                    Column('date', Date, nullable=True, default=date.today),
-                    #Column('type', String, nullable=True),
+                    Column('date', Date, nullable=True, default=date.today)
                   )
 
 class Web(Base):
     __tablename__ = 'WEB'
     wp_link = Column(String, primary_key=True)
 
-    #WPScan jsons
-    wpscan = Column(String, nullable=True)
-
-    #optional lists
+    wpscan = Column(String, nullable=True) #WPScan jsons
     cracked = Column(String, nullable=True)
-
     file_lists = relationship('FileList',secondary=web_to_list, back_populates='webs', lazy="selectin")
     #brutal_runs = relationship('BrutalRun', back_populates='web')
 
@@ -65,7 +60,6 @@ class FileList(Base):
     name = Column(String, nullable=True, unique=True)
     description = Column(String, nullable=True)
 
-    #optional
     format = Column(String, nullable=True)
     list_type = Column(String, nullable=True) # pass|user|link|cewl|dork
 
@@ -113,7 +107,7 @@ async def valid_wp_link(wp_link):
         web_instance = result.scalars().first()
         return bool(web_instance)
 
-
+#create file list if not exists
 async def get_or_create_list(session, list_type, file_list_path):
     file_list = (await session.execute(
         select(FileList).filter_by(path=file_list_path, list_type=list_type)

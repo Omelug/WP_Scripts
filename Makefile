@@ -1,41 +1,51 @@
+SHELL := /bin/zsh
+
+ifndef VERBOSE
+.SILENT:
+endif
+
 venv_init:
-	python3 -m venv .venv
+	if [ -d ".venv" ]; then \
+		 echo "\033[38;5;214m.venv already exists,";\
+		 echo "run venv_clean before for refresh\033[0m"; \
+	else \
+		python3 -m venv .venv; \
+	fi
 
-venv_clean:
-	rm  -rf .venv
-
-req_save:
-	pip3 freeze > requirements.txt
-
-install:
-	#pip3 install --force-reinstall git+https://github.com/Omelug/Dork_tools.git#egg=dork_tools
-	pip3 install -r requirements.txt
-	pip3 install git+https://github.com/Omelug/dorkScanner.git#egg=dork_scanner
-	pip3 install git+https://github.com/Omelug/python_mini_modules.git#egg=input_parser
+install: # ignore already installed libraries
+	echo "Installing libraries"
+	pip3 install -r requirements.txt --exists-action=i -q
+	pip3 install git+https://github.com/Omelug/dorkScanner.git#egg=dork_scanner --exists-action=i -q
+	pip3 install git+https://github.com/Omelug/python_mini_modules.git#egg=input_parser --exists-action=i -q
 
 install_external_tools:
-	mkdir -p ./external_tools
+	/extemkdir -p .rnal_tools
 	sudo apt install wpscan
 	git clone https://github.com/opsdisk/pagodo.git ./external_tools/pagodo
 	cd ./external_tools/pagodo && pip install -r requirements.txt
 
 download_default_wordlists:
-	mkdir -p ./wordlists
-	mkdir -p ./wordlists/wp_link
-	mkdir -p ./wordlists/dorks
-	mkdir -p ./wordlists/pass
-	mkdir -p ./wordlists/user
-	mkdir -p ./wordlists/cewl
+	echo "Creating default directories"
+	mkdir -p ./wordlists/{wp_link,dorks,pass,user,cewl}
+	mkdir -p ./output/{wpscan,pass,user,wpscan_brutal,cracked}
 
-	mkdir -p ./output
-	mkdir -p ./output/wpscan
-	mkdir -p ./output/pass
-	mkdir -p ./output/user
-	mkdir -p ./output/wpscan_brutal
-	mkdir -p ./output/cracked
-
+	echo "Downloading default wordlists"
 	#Dorks
-	cd ./wordlists/dorks && wget -nc "https://raw.githubusercontent.com/Proviesec/google-dorks/main/cms/google-dorks-for-wordpress.txt"
+	if [ ! -f ./wordlists/dorks/google-dorks-for-wordpress.txt ]; then \
+ 		cd ./wordlists/dorks && wget -nc "https://raw.githubusercontent.com/Proviesec/google-dorks/main/cms/google-dorks-for-wordpress.txt"; \
+ 	else \
+   		echo "Wordlists are downloaded"; \
+ 	fi
 
 quick_start:
-	python3
+	make venv_init
+	make install
+	make download_default_wordlists
+
+
+#------------FOR DEBUGGING -------------------
+venv_clean:
+	rm  -rf .venv
+
+req_save:
+	pip3 freeze > requirements.txt

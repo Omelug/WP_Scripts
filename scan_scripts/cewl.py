@@ -1,20 +1,23 @@
 import os
 from urllib.parse import urlparse
 from input_parser import InputParser
-from sqlalchemy import update, select, exists
+from sqlalchemy import select, exists
 from sqlalchemy.orm import selectinload, aliased
 
 from wp_config import CONFIG
 from wp_db import get_session, Web, FileList, CewlList, valid_wp_link, web_to_list
 from wp_log import print_saved, print_e
-from wp_scanner import run_command
+from scripts.wp_scanner import run_command
 
-
-async def run(raw_args):
+def get_args(raw_args):
     parser = InputParser(description="Cewl Script")
     parser.add_argument('--wp_link', type=str, required=True, help='WordPress link for the enum script')
     parser.add_argument('--overwrite', action="store_true")
-    args = parser.parse_args(raw_args.split())
+    return parser.parse_args(raw_args.split())
+
+async def run(raw_args):
+
+    args = get_args(raw_args)
 
     if not await valid_wp_link(args.wp_link):
         print_e("CEWL script requires a valid WordPress link")
@@ -69,6 +72,7 @@ async def run(raw_args):
             session.add(cewl_list)
         await session.commit()
 
+# get from database webs that do not have cewl list yet
 async def webs_without_cewl():
     async with get_session() as session:
         # Aliased to avoid conflicts in the query
