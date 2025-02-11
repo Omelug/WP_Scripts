@@ -1,6 +1,5 @@
 import asyncio
 import importlib.util
-import json
 import os
 from input_parser import InputParser
 
@@ -23,6 +22,7 @@ def get_args():
 
     parser.add_argument("--enum_all", action="store_true", help="Run WPScan enum script on all webs")
     parser.add_argument("--brutal_all", action="store_true", help="Run brutal (bruteforce) script on all webs")
+    parser.add_argument("--brutal_cewl_all", action="store_true", help="Run brutal with cewl links")
     parser.add_argument("--cewl_all", action="store_true", help="Create cewl script on all webs without cewl list")
     parser.add_argument("--save_cracked_all", action="store_true", help="Save users from wpascan to user list")
 
@@ -142,6 +142,11 @@ async def main(print_help=False):
 
     if args.save_cracked_all:
         await scanner.start_workers('save_cracked')
+
+    # brutal_cewl script to bruteforce with cewl lists
+    if args.brutal_cewl_all:
+        webs = await get_webs()
+        await scanner.start_workers('brutal_cewl', script_args=f" --skip_no_xmlrcp {script_args} ", webs=webs)
 
 if __name__ == '__main__':
     asyncio.run(main())

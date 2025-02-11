@@ -15,7 +15,7 @@ def get_args(raw_args):
     parser = InputParser(description="Brutal Script")
     parser.add_argument('--wp_link', type=str, required=True, help='WordPress link for the enum script')
     parser.add_argument("--pass_list", type=str, required=True)
-    parser.add_argument("--user_list", type=str)
+    parser.add_argument("--user_list", type=str, help="User list - default is from wpscan")
     parser.add_argument("--skip_no_xmlrcp", action="store_false")
     parser.add_argument('--overwrite', action="store_true")
 

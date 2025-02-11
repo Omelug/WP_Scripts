@@ -17,6 +17,7 @@ def get_args(raw_args):
     parser.add_argument('--overwrite', action="store_true")
     return parser.parse_args(raw_args.split())
 
+# generate cewl wordlist
 async def run(raw_args):
 
     args = get_args(raw_args)
@@ -29,11 +30,13 @@ async def run(raw_args):
     if not args.overwrite and os.path.exists(output_path):
         print_e(f"Wordlist already exists at {output_path}")
         return
-    cewl_command = CONFIG['wp_scanner']['cewl_input'].format(output_path, args.wp_link)
-    full_command = f"cewl {cewl_command}"
 
-    await run_command(full_command)
+    #TODO add cewl to separated function to use it in other scripts cewl(...)
+    cewl_command = f"cewl {CONFIG['wp_scanner']['cewl_input'].format(output_path, args.wp_link)}"
+    await run_command(cewl_command)
     print_saved(f"cewl output to {output_path}")
+
+    #save cewl list to database
     async with get_session() as session:
 
         existing_file_list = await session.execute(select(FileList).filter_by(path=output_path))
@@ -57,18 +60,18 @@ async def run(raw_args):
             web_instance.file_lists.append(file_list)
             await session.commit()
 
-        # insert cewl info about list
+        # insert additional cewl info about list
         existing_cewl_list = await session.execute(
             select(CewlList).filter_by(file_list=output_path, web_link=args.wp_link)
         )
         existing_cewl_list = existing_cewl_list.scalars().first()
 
         if existing_cewl_list:
-            existing_cewl_list.arguments = full_command
+            existing_cewl_list.arguments = cewl_command
         else:
             cewl_list = CewlList(
                 file_list=output_path,
-                arguments=full_command,
+                arguments=cewl_command,
                 web_link=args.wp_link
             )
             session.add(cewl_list)
