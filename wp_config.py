@@ -1,3 +1,4 @@
+import argparse
 import json
 import os
 import sys
@@ -14,25 +15,25 @@ else:
     from wp_secret import DATABASE_URL_ASYNC, WPSCAN_API
 
 DEFAULT_CONFIG = {
-        "wp_hub": {
-            "folder_path": folder_path,
-            "output_folder": f"./output/",
-            "wordlist_folder": f"./wordlists/",
-            "color_output": True,
-        },
-        "wp_dorker": {
-            'max_search_result_urls_to_retucewlrn_per_dork': 5,
-            'rewrite_link_list': True,
-            'dork_filter' : "site:.cz"
-        },
-        "wp_db": {
-            "DATABASE_URL_ASYNC": DATABASE_URL_ASYNC,
-        },
-        "wp_scanner": {
-            'max_workers': 10,
-            'cewl_input': " --min_word_length 5 --depth 1 -w {} {} ",
-            'wpscan_api': WPSCAN_API,
-        }
+            "wp_hub": {
+                "folder_path": folder_path,
+                "output_folder": f"./output/",
+                "wordlist_folder": f"./wordlists/",
+                "color_output": True,
+            },
+            "wp_dorker": {
+                'max_search_result_urls_to_retucewlrn_per_dork': 5,
+                'rewrite_link_list': True,
+                'dork_filter' : "site:.cz"
+            },
+            "wp_db": {
+                "DATABASE_URL_ASYNC": DATABASE_URL_ASYNC,
+            },
+            "wp_scanner": {
+                'max_workers': 10,
+                'cewl_input': " --min_word_length 5 --depth 1 -w {} {} ",
+                'wpscan_api': WPSCAN_API,
+            }
         }
 
 global CONFIG
@@ -52,6 +53,13 @@ def load_config(config_file="config.json"):
     os.makedirs(CONFIG['wp_hub']['wordlist_folder'], mode=0o777, exist_ok=True)
 load_config()
 
+def get_args():
+    parser = argparse.ArgumentParser(description='Run WP Hub scripts.')
+    parser.add_argument('--generate_default', action='store_true', help='Generate default configuration.')
+    args, unknown = parser.parse_known_args()
+    return args, unknown
+
 if __name__ == "__main__":
-    if '--generate_default' in sys.argv:
+    args, unknown = get_args()
+    if args.generate_default:
         generate_default()

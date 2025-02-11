@@ -42,6 +42,8 @@ quick_start:
 	make install
 	make download_default_wordlists
 
+test:
+	python3 -m unittest discover -s tests -p "*_test.py"
 
 #------------FOR DEBUGGING -------------------
 venv_clean:
