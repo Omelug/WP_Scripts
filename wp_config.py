@@ -33,6 +33,7 @@ DEFAULT_CONFIG = {
                 'max_workers': 10,
                 'cewl_input': " --min_word_length 5 --depth 1 -w {} {} ",
                 'wpscan_api': WPSCAN_API,
+                'skip_no_xmlrcp': True,
             }
         }
 

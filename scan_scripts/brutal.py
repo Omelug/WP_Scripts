@@ -5,11 +5,13 @@ from urllib.parse import urlparse
 from input_parser import InputParser
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
-import wp_db
 from wp_config import CONFIG
 from wp_db import get_session, Web, valid_wp_link, BrutalRun
 from wp_log import print_e
 from scripts.wp_scanner import run_command
+
+
+__description__ = """ Bruteforce WordPress site """
 
 def get_args(raw_args):
     parser = InputParser(description="Brutal Script")
@@ -109,21 +111,12 @@ async def brutal(wp_link, user_list=None, pass_list=None, skip_no_xmlrcp=False, 
         )).scalars().first()
 
         if not web_instance:
-            print_e(web_instance + "is not a valid web instance")
+            print_e( f"{web_instance} is not a valid web instance")
             return
 
-        #TODO change cracked list accroding to results
-        #wp_scanner.add_cracked()
-        #with open(output_path, 'r') as file:
-        #    data = json.load(file)
-        #    print(data.get('password_attack'))
-
-        pass_file_list = await wp_db.get_or_create_list(session, list_type="pass", file_list_path=pass_list)
-        user_file_list = await wp_db.get_or_create_list(session, list_type="user", file_list_path=user_list)
-
         brutal_run = BrutalRun(
-            pass_list=pass_list,
-            user_list=user_list,
+            pass_list=os.path.relpath(pass_list, start=CONFIG['wp_hub']['folder_path']),
+            user_list=os.path.relpath(user_list, start=CONFIG['wp_hub']['folder_path']),
             wp_link=wp_link,
             path=output_path
         )

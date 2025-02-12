@@ -5,7 +5,7 @@ from input_parser import InputParser
 
 from wp_config import CONFIG
 from wp_db import Web, getWeb_whereNull, get_webs
-from wp_log import print_e
+from wp_log import print_e, print_ok
 
 conf = CONFIG['wp_scanner']
 
@@ -29,8 +29,23 @@ def get_args():
     parser.add_argument("--scan_all", action="store_true",
                         help="--enum_all --brutal_all --cewl_all")
 
+    parser.add_argument("--scanner_list", action="store_true", help="print list of available scanner scripts")
+
     args, unknown = parser.parse_known_args()
     return parser, args, unknown
+
+# list all available scanner scripts
+def list_scanner_scripts():
+    scan_scripts_dir = './scan_scripts'
+    scripts = [f for f in os.listdir(scan_scripts_dir) if f.endswith('.py')]
+    print_ok("Available scanner scripts:")
+    for script in scripts:
+        script_path = os.path.join(scan_scripts_dir, script)
+        spec = importlib.util.spec_from_file_location(script, script_path)
+        script_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(script_module)
+        description = getattr(script_module, '__description__', '')
+        print(f"\t{script}: {description}")
 
 
 async def run_command(full_command, print_output=True):
@@ -118,6 +133,11 @@ async def main(print_help=False):
         parser.print_help()
         exit(0)
 
+
+    if args.scanner_list:
+        list_scanner_scripts()
+        exit(0)
+
     script_args = args.script_args
     if unknown:
         script_args += f" {" ".join(unknown)}"
@@ -132,8 +152,10 @@ async def main(print_help=False):
         await scanner.start_workers('enum',webs=webs)
 
     if args.scan_all or args.brutal_all:
-        webs = await get_webs() #TODO default skip_no_xmlrcp?
-        await scanner.start_workers('brutal',script_args=f" --skip_no_xmlrcp {script_args} ",webs=webs)
+        webs = await get_webs()
+        if conf['skip_no_xmlrcp']:
+            script_args += " --skip_no_xmlrcp"
+        await scanner.start_workers('brutal',script_args=f"{script_args} ",webs=webs)
 
     if args.scan_all or args.cewl_all:
         from scan_scripts.cewl import webs_without_cewl

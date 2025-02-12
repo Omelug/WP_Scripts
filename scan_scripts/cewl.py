@@ -18,25 +18,17 @@ def get_args(raw_args):
     return parser.parse_args(raw_args.split())
 
 # generate cewl wordlist
-async def run(raw_args):
-
-    args = get_args(raw_args)
-
-    if not await valid_wp_link(args.wp_link):
-        print_e("CEWL script requires a valid WordPress link")
-        return
-
-    output_path = f"{CONFIG['wp_hub']['wordlist_folder']}cewl/{urlparse(args.wp_link).netloc}.txt"
-    if not args.overwrite and os.path.exists(output_path):
+async def cewl_site(wp_link, overwrite=False):
+    output_path = f"{CONFIG['wp_hub']['wordlist_folder']}cewl/{urlparse(wp_link).netloc}.txt"
+    if not overwrite and os.path.exists(output_path):
         print_e(f"Wordlist already exists at {output_path}")
         return
 
-    #TODO add cewl to separated function to use it in other scripts cewl(...)
-    cewl_command = f"cewl {CONFIG['wp_scanner']['cewl_input'].format(output_path, args.wp_link)}"
+    cewl_command = f"cewl {CONFIG['wp_scanner']['cewl_input'].format(output_path, wp_link)}"
     await run_command(cewl_command)
     print_saved(f"cewl output to {output_path}")
 
-    #save cewl list to database
+    # save cewl list to database
     async with get_session() as session:
 
         existing_file_list = await session.execute(select(FileList).filter_by(path=output_path))
@@ -45,7 +37,7 @@ async def run(raw_args):
         if not file_list:
             file_list = FileList(
                 path=output_path,
-                name=urlparse(args.wp_link).netloc,
+                name=urlparse(wp_link).netloc,
                 description="CEWL generated wordlist",
                 list_type="cewl"
             )
@@ -54,8 +46,9 @@ async def run(raw_args):
 
         # add lists to web connection
         web_instance = (await session.execute(
-            select(Web).options(selectinload(Web.file_lists)).filter_by(wp_link=args.wp_link)
+            select(Web).options(selectinload(Web.file_lists)).filter_by(wp_link=wp_link)
         )).scalars().first()
+
         if file_list not in web_instance.file_lists:
             web_instance.file_lists.append(file_list)
             await session.commit()
@@ -76,6 +69,18 @@ async def run(raw_args):
             )
             session.add(cewl_list)
         await session.commit()
+
+
+# run cewl on the given wp_link
+async def run(raw_args):
+
+    args = get_args(raw_args)
+
+    if not await valid_wp_link(args.wp_link):
+        print_e("CEWL script requires a valid WordPress link")
+        return
+
+    await cewl_site(wp_link=args.wp_link, overwrite=args.overwrite)
 
 # get from database webs that do not have cewl list yet
 async def webs_without_cewl():
