@@ -1,18 +1,34 @@
 import argparse
+import configparser
 import json
 import os
 import sys
 
 folder_path = os.path.dirname(os.path.abspath(__file__))
 
-secret = "wp_secret.py"
-if not os.path.exists(secret):
-    with open(secret, 'w+') as f:
-        print("DATABASE_URL_ASYNC = 'postgresql+asyncpg://<database username>:<password>@localhost:5432/<db_name>'", file=f)
-        print(f"Please, edit {secret}", file=sys.stderr)
+config_file = "wp_secrets.ini"
+if not os.path.exists(config_file):
+    config = configparser.ConfigParser()
+    config['DATABASE'] = {
+        'username': 'postgres',
+        'password': 'velmi_silne_heslo',
+        'host': 'localhost',
+        'port': '5432',
+        'db_name': 'wp_hub_2'
+    }
+    config['WPSCAN'] = {
+        'api_key': '<api_key>'
+    }
+    with open(config_file, 'w') as configfile:
+        config.write(configfile)
+    print(f"Please, edit {config_file}", file=sys.stderr)
     exit(0)
 else:
-    from wp_secret import DATABASE_URL_ASYNC, WPSCAN_API
+    config = configparser.ConfigParser()
+    config.read(config_file)
+    db_config = config['DATABASE']
+    DATABASE_URL_ASYNC = f"postgresql+asyncpg://{db_config['username']}:{db_config['password']}@{db_config['host']}:{db_config['port']}/{db_config['db_name']}"
+    WPSCAN_API = config['WPSCAN']['api_key']
 
 DEFAULT_CONFIG = {
             "wp_hub": {
@@ -28,6 +44,8 @@ DEFAULT_CONFIG = {
             },
             "wp_db": {
                 "DATABASE_URL_ASYNC": DATABASE_URL_ASYNC,
+                "db_name": db_config['db_name']
+
             },
             "wp_scanner": {
                 'max_workers': 10,

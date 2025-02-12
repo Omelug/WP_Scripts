@@ -41,11 +41,13 @@ async def run(raw_args):
 
     #get cewl list from database
     cewl = await get_cewl_list_by_web_link(args.wp_link)
-    if not cewl:
-        if  not args.cewl_scan:
+    if not cewl or cewl is None:
+        if not args.cewl_scan:
             print_e("No CeWL list found for the given wp_link")
             return
         await cewl_site(args.wp_link, overwrite=args.overwrite)
+        cewl = await get_cewl_list_by_web_link(args.wp_link)
+        print(f"CeWL list created {cewl}")
 
     cewl_path = f"{CONFIG['wp_hub']['folder_path']}/{cewl.file_list}"
     print(f"CeWL list: {cewl_path}")

@@ -118,8 +118,8 @@ async def brutal(wp_link, user_list=None, pass_list=None, skip_no_xmlrcp=False, 
             return
 
         brutal_run = BrutalRun(
-            pass_list=os.path.relpath(pass_list, start=CONFIG['wp_hub']['folder_path']),
-            user_list=os.path.relpath(user_list, start=CONFIG['wp_hub']['folder_path']),
+            pass_list=f"./{os.path.relpath(pass_list, start=CONFIG['wp_hub']['folder_path'])}",
+            user_list=f"./{os.path.relpath(user_list, start=CONFIG['wp_hub']['folder_path'])}",
             wp_link=wp_link,
             path=output_path
         )

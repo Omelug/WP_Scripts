@@ -64,8 +64,8 @@ wp_db.py
 wp_log.py
     log IO functions for colored output
 
-wp_secret.py (created at the begginig)
-    secret vars for passwords etc. (change after first start to postgres connect)
+wp_secrets.ini (created at the begginig)
+    secret config for passwords etc. (change after first start to postgres connect)
 
 ----------------
 DATABASE
@@ -74,26 +74,42 @@ important part of project is postgres database where are stored result
 - path format is relative path from root
 
 [TABLE] web: table of wordpress webs by root wp link
+    <<PK>> wp_link
+    wpscan - list linked with wp_scanner.py --enum_all
+    cracked - list of final results from bruteforce
 [TABLE] file_list: table for files - wordlists, bruteforce lists, cewl lists, user/password lists
-
+    <<PK>> path
+    <unique> name
+    list_type: for example cewl, user, pass, dork
+    description
+    format
 [TABLE] cewl: additional information for cewl scans
-[TABLE] web_to_list
-[TABLE] brutal_run
+    <<FK>> file_list + web_link
+    date: date of last scan
+    arguments: run command of cewl
+[TABLE] web_to_list: table to semantic conncetion of file_list and web
+    <<FK>> list_path, web_link
+    date
+    type: type of connection
 
+[TABLE] brutal_run
+    <<PK>> user_list,pass_list, wp_link
+    date
+    path: path to result log
 
 ----------------
 QUICK START
 +++++++++++++
 1/ make quick_start
-
+2/ wp_db.py
 dork_list from ./wordlists/dorks:
 
-2/ python3 ./scripts/wp_dorker.py --add_dorks_auto (add dorks to database)
-3/ python3 ./scripts/wp_dorker.py --print_dork_lists  (choose dork_list, get name)
-4/ python3 ./scripts/wp_dorker.py --scan_dork_list <dork list name>
+3/ python3 ./scripts/wp_dorker.py --add_dorks_auto (add dorks to database)
+4/ python3 ./scripts/wp_dorker.py --print_dork_lists  (choose dork_list, get name)
+5/ python3 ./scripts/wp_dorker.py --scan_dork_list <dork list name>
 
 
-5/ scan
+6/ scan
 option 1 - scan one wp_link:
     a/ check database, get wp_link
     b/ python ./scripts/wp_scanner --script "enum" --wp_link <WEB.wp_link>""

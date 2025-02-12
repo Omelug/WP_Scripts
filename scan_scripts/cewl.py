@@ -1,3 +1,4 @@
+import datetime
 import os
 from urllib.parse import urlparse
 from input_parser import InputParser
@@ -24,6 +25,7 @@ async def cewl_site(wp_link, overwrite=False):
         print_e(f"Wordlist already exists at {output_path}")
         return
 
+    #TODO edit lists, wordpress minimum lenght?
     cewl_command = f"cewl {CONFIG['wp_scanner']['cewl_input'].format(output_path, wp_link)}"
     await run_command(cewl_command)
     print_saved(f"cewl output to {output_path}")
@@ -38,34 +40,27 @@ async def cewl_site(wp_link, overwrite=False):
             file_list = FileList(
                 path=output_path,
                 name=urlparse(wp_link).netloc,
-                description="CEWL generated wordlist",
+                description="",
                 list_type="cewl"
             )
             session.add(file_list)
         await session.commit()
 
-        # add lists to web connection
-        web_instance = (await session.execute(
-            select(Web).options(selectinload(Web.file_lists)).filter_by(wp_link=wp_link)
-        )).scalars().first()
-
-        if file_list not in web_instance.file_lists:
-            web_instance.file_lists.append(file_list)
-            await session.commit()
-
         # insert additional cewl info about list
         existing_cewl_list = await session.execute(
-            select(CewlList).filter_by(file_list=output_path, web_link=args.wp_link)
+            select(CewlList).filter_by(file_list=output_path, web_link=wp_link)
         )
         existing_cewl_list = existing_cewl_list.scalars().first()
 
+
         if existing_cewl_list:
             existing_cewl_list.arguments = cewl_command
+            existing_cewl_list.date = datetime.datetime.now()
         else:
             cewl_list = CewlList(
                 file_list=output_path,
                 arguments=cewl_command,
-                web_link=args.wp_link
+                web_link=wp_link
             )
             session.add(cewl_list)
         await session.commit()
@@ -87,9 +82,7 @@ async def webs_without_cewl():
     async with get_session() as session:
         query = select(Web).where(
             ~exists().where(
-                (Web.wp_link == web_to_list.c.web_link) &
-                (web_to_list.c.list_path == FileList.path) &
-                (FileList.list_type == "cewl")
+                (Web.wp_link == CewlList.web_link)
             )
         )
         result = await session.execute(query)
