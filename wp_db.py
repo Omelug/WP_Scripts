@@ -88,12 +88,11 @@ class FileList(Base):
 
 class BrutalRun(Base):
     __tablename__ = 'brutal_run'
-    id = Column(Integer, primary_key=True, autoincrement=True)
     user_list = Column(String, ForeignKey('file_list.path'))
     pass_list = Column(String, ForeignKey('file_list.path'))
     wp_link = Column(String, ForeignKey('web.wp_link'))
     date = Column(Date, default=date.today)
-    path = Column(String)
+    path = Column(String, primary_key=True)
 
 class CewlList(Base):
     __tablename__ = 'cewl_run'

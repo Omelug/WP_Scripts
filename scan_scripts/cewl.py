@@ -3,10 +3,9 @@ import os
 from urllib.parse import urlparse
 from input_parser import InputParser
 from sqlalchemy import select, exists
-from sqlalchemy.orm import selectinload, aliased
 
 from wp_config import CONFIG
-from wp_db import get_session, Web, FileList, CewlList, valid_wp_link, web_to_list
+from wp_db import get_session, Web, FileList, CewlList, valid_wp_link
 from wp_log import print_saved, print_e
 from scripts.wp_scanner import run_command
 
@@ -25,7 +24,6 @@ async def cewl_site(wp_link, overwrite=False):
         print_e(f"Wordlist already exists at {output_path}")
         return
 
-    #TODO edit lists, wordpress minimum lenght?
     cewl_command = f"cewl {CONFIG['wp_scanner']['cewl_input'].format(output_path, wp_link)}"
     await run_command(cewl_command)
     print_saved(f"cewl output to {output_path}")

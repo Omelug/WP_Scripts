@@ -23,6 +23,12 @@ def get_args(raw_args):
     parser.add_argument("--skip_no_xmlrcp", action="store_false")
     parser.add_argument('--overwrite', action="store_true")
 
+    #TODO do function fo print all cracked users
+    # for now:
+    # grep password_attack -A 2 ./output/wpscan_brutal/*
+    parser.add_argument('--print_cracked', action="store_true",help="No implemented yet, use\n"
+                                                                "grep password_attack -A 2 ./output/wpscan_brutal/*")
+
     return parser.parse_args(raw_args.split())
 
 async def run(raw_args):
@@ -123,6 +129,8 @@ async def brutal(wp_link, user_list=None, pass_list=None, skip_no_xmlrcp=False, 
             wp_link=wp_link,
             path=output_path
         )
+
+        #TODO select cracked to output_path
 
         session.add(brutal_run)
         await session.commit()

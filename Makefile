@@ -27,7 +27,7 @@ install_external_tools:
 download_default_wordlists:
 	echo "Creating default directories"
 	mkdir -p ./wordlists/{wp_link,dorks,pass,user,cewl}
-	mkdir -p ./output/{wpscan,pass,user,wpscan_brutal,cracked}
+	mkdir -p ./output/{wpscan,wpscan_brutal,cracked}
 
 	echo "Downloading default wordlists"
 	#Dorks

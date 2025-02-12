@@ -175,7 +175,7 @@ async def scan_dork_list( dork_list: str ,add_to_web=True):
                     wp_link_set.add(root_link)
 
     #get only unique wordpress instances
-    wp_link_set = find_unique_wordpress_instances(wp_link_set)
+    wp_link_set = await find_unique_wordpress_instances(wp_link_set)
 
 
     # create link list file and save it ot database

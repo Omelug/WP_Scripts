@@ -21,8 +21,9 @@ def get_args():
     parser.add_argument("--brutal_all", action="store_true", help="Run brutal (bruteforce) script on all webs")
     parser.add_argument("--brutal_cewl_all", action="store_true", help="Run brutal with cewl links")
     parser.add_argument("--cewl_all", action="store_true", help="Create cewl script on all webs without cewl list")
+
     #TODO tohle je cele nejake divne, co to má sakra dělat?
-    parser.add_argument("--save_cracked_all", action="store_true", help="Save users from wpascan to user list")
+    parser.add_argument("--save_cracked_all", action="store_true", help="Save users from user list to cracked")
 
     parser.add_argument("--scan_all", action="store_true",
                         help="--enum_all --brutal_all --cewl_all")
@@ -161,7 +162,8 @@ async def main(print_help=False):
     if args.save_cracked_all:
         #TODO this dont do anything, save_cracked dont work
         # getcracked lists from wpscan
-        await scanner.start_workers('save_cracked')
+        #await scanner.start_workers('save_cracked')
+        pass
 
     # brutal_cewl script to bruteforce with cewl lists
     if args.brutal_cewl_all:

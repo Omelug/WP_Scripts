@@ -18,7 +18,9 @@ def get_args(raw_args):
     parser.add_argument('--overwrite', action="store_true")
 
     parser.add_argument('--cewl_scan', action="store_true")
+
     #TODO  option to set modification before running the script
+    parser.add_argument('--hashcat_basic', action="store_true")
 
     return parser.parse_args(raw_args.split())
 
@@ -49,10 +51,20 @@ async def run(raw_args):
         cewl = await get_cewl_list_by_web_link(args.wp_link)
         print(f"CeWL list created {cewl}")
 
-    cewl_path = f"{CONFIG['wp_hub']['folder_path']}/{cewl.file_list}"
-    print(f"CeWL list: {cewl_path}")
+    pass_path = f"{CONFIG['wp_hub']['folder_path']}/{cewl.file_list}"
+    print(f"CeWL list: {pass_path}")
+
+    if args.hashcat_basic:
+        #TODO bruteforce with hashcat
+        #create pass_list for basic hashcat rule conf['default_hashcat_rules']
+        #find hashcat rules in conf['default_hashcat_rules']
+        #create hashcat command and create hashcat lists *cewl_hashcat if not exists
+        #pass_list = f"{CONFIG['wp_hub']['folder_path']}/{cewl.file_list}"
+        #TODO add hashcat to requirements
+        pass
+
     await brutal(args.wp_link, user_list=args.user_list,
-                     pass_list=cewl_path, skip_no_xmlrcp=args.skip_no_xmlrcp,
+                     pass_list=pass_path, skip_no_xmlrcp=args.skip_no_xmlrcp,
                      overwrite=args.overwrite)
 
 
