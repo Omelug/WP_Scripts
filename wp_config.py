@@ -50,8 +50,8 @@ def load_config(config_file="config.json"):
         with open(config_file, 'r') as f:
             file_config = json.load(f)
         CONFIG.update(file_config)
-    os.makedirs(CONFIG['wp_hub']['output_folder'], mode=0o777, exist_ok=True)
-    os.makedirs(CONFIG['wp_hub']['wordlist_folder'], mode=0o777, exist_ok=True)
+    os.makedirs(CONFIG['wp_hub']['output_folder'], mode=0o666, exist_ok=True)
+    os.makedirs(CONFIG['wp_hub']['wordlist_folder'], mode=0o666, exist_ok=True)
 load_config()
 
 def get_args():

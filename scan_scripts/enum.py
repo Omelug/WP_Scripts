@@ -11,6 +11,7 @@ from scripts.wp_scanner import run_command
 __description__ = """ Enumerate WordPress site with WPScan"""
 
 #extract users from wpscan report
+# save user list to ./output/cracked/<netloc>.txt
 async def user_extract(wp_link): #wp_link needs to be valid
     async with get_session() as session:
         user_pass_path = f"{CONFIG['wp_hub']['output_folder']}cracked/{urlparse(wp_link).netloc}.txt"
@@ -47,7 +48,8 @@ def get_args(raw_args):
     parser.add_argument('--api', type=str, help='WPSCan API key')
     return parser.parse_args(raw_args.split())
 
-# scan
+# scan wpascan
+# save output to ./output/wpscan/<netloc>.json + file_list table
 async def run(raw_args):
     args = get_args(raw_args)
 

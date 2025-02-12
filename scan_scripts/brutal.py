@@ -2,6 +2,8 @@ import hashlib
 import json
 import os
 from urllib.parse import urlparse
+
+import aiofiles
 from input_parser import InputParser
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -56,10 +58,9 @@ async def wpscan_get_user_list(wp_link):
         return user_list
 
 
-def check_xmlrpc_enabled(json_file_path)-> (bool, str):
-    #TODO multicall settings
-    with open(json_file_path, 'r') as file:
-        data = json.load(file)
+async def check_xmlrpc_enabled(json_file_path) -> (bool, str):
+    async with aiofiles.open(json_file_path, 'r') as file:
+        data = json.loads(await file.read())
         for finding in data.get('interesting_findings', []):
             if finding.get('type') == 'xmlrpc':
                 if "XML-RPC seems to be enabled" in finding.get('to_s', ''):
@@ -75,7 +76,8 @@ def get_file_hash(file_path):
             md5.update(chunk)
     return md5.hexdigest()
 
-# bruteforce wordpress site
+# bruteforce wordpress site with wpscan
+# save to ./wordlists/wpscan_brutal + file_list table
 async def brutal(wp_link, user_list=None, pass_list=None, skip_no_xmlrcp=False, overwrite=False):
     if user_list is None:
         user_list = await wpscan_get_user_list(wp_link)
@@ -89,7 +91,7 @@ async def brutal(wp_link, user_list=None, pass_list=None, skip_no_xmlrcp=False, 
                 select(Web.wpscan).where(Web.wp_link == wp_link)
             )).scalars().first()
 
-    xml_enabled, xml_type = check_xmlrpc_enabled(wpscan)
+    xml_enabled, xml_type = await check_xmlrpc_enabled(wpscan)
 
     if not xml_enabled and skip_no_xmlrcp:
         print_e(f"{wp_link} No xmlrcp enabled, skip")
@@ -97,7 +99,7 @@ async def brutal(wp_link, user_list=None, pass_list=None, skip_no_xmlrcp=False, 
 
     output_path = f"{CONFIG['wp_hub']['output_folder']}wpscan_brutal/{urlparse(wp_link).netloc}_{get_file_hash(pass_list)[:10]}.json"
     if os.path.exists(output_path) and not overwrite:
-        print_e(f"Brutal output already exists at {output_path}")
+        print_e(f"Brutal output for this pass_list already exists at {output_path}")
         return
 
     # run WPScan bruteforce

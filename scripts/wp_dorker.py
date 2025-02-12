@@ -133,7 +133,7 @@ async def wp_list_to_webs(session, wp_links: set):
             dork_links.webs.append(web_entry)
     await session.commit()
 
-
+# scan dork list and save it to  ./wordlists/wp_link + file_list table
 async def scan_dork_list( dork_list: str ,add_to_web=True):
     # get dork list by name or path
     async with get_session() as session:
