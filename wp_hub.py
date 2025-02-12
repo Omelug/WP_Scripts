@@ -27,9 +27,10 @@ class Hub:
                 print_e(f"Exception occurred in {script_name}: {e}")
 
     # find subscript for given arguments
+    #TODO wp_scanner not woking, now found scripts in ./scan_scripts
     def find_subscript_by_args(self, raw_args):
         for script_name in self.sub_scripts:
-            print(f"Checking {script_name}...")
+            #print(f"Checking {script_name}...")
             script_module = importlib.import_module(script_name)
             if hasattr(script_module, 'get_args'):
                 _, script_args, _ = script_module.get_args()

@@ -19,10 +19,10 @@ install: # ignore already installed libraries
 	pip3 install git+https://github.com/Omelug/python_mini_modules.git#egg=input_parser --exists-action=i -q
 
 install_external_tools:
-	/extemkdir -p .rnal_tools
+	mkdir -p ./external_tools
 	sudo apt install wpscan
-	git clone https://github.com/opsdisk/pagodo.git ./external_tools/pagodo
-	cd ./external_tools/pagodo && pip install -r requirements.txt
+	#git clone https://github.com/opsdisk/pagodo.git ./external_tools/pagodo
+	#cd ./external_tools/pagodo && pip install -r requirements.txt
 
 download_default_wordlists:
 	echo "Creating default directories"
@@ -40,6 +40,7 @@ download_default_wordlists:
 quick_start:
 	make venv_init
 	make install
+	make install_external_tools
 	make download_default_wordlists
 
 test:

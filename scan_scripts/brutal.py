@@ -35,7 +35,8 @@ async def run(raw_args):
 
     await brutal(args.wp_link, user_list=args.user_list, pass_list=args.pass_list, skip_no_xmlrcp=args.skip_no_xmlrcp, overwrite=args.overwrite)
 
- # update/create user list from last wpscan of wp_link
+# update/create user list from last wpscan
+# save user list to ./wordlists/user/<netloc>.txt
 async def wpscan_get_user_list(wp_link):
     async with get_session() as session:
         web = (await session.execute(

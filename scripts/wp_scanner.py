@@ -13,12 +13,9 @@ def get_args():
     parser = InputParser()
 
     parser.add_argument('--scan', type=str, help='Name of scan script to run')
-    parser.add_argument('--script_args', type=str, default="", help='Arguments for the scanner script')
+    parser.add_argument("--scanner_list", action="store_true", help="print list of available scanner scripts")
 
-    #parser.add_argument("--enum", type=str, help="<Web.wp_link> WPScan")
-    #parser.add_argument("--brutal", type=str,  help="<Web.wp_link> brutal")
-    #parser.add_argument("--cewl", type=str, help="<Web.wp_link> cewl")
-    #parser.add_argument("--wpscan_extract", type=str, help="<Web.wpscan>")
+    parser.add_argument('--script_args', type=str, default="", help='Arguments for the scanner script, only backup solv here')
 
     parser.add_argument("--enum_all", action="store_true", help="Run WPScan enum script on all webs")
     parser.add_argument("--brutal_all", action="store_true", help="Run brutal (bruteforce) script on all webs")
@@ -29,7 +26,6 @@ def get_args():
     parser.add_argument("--scan_all", action="store_true",
                         help="--enum_all --brutal_all --cewl_all")
 
-    parser.add_argument("--scanner_list", action="store_true", help="print list of available scanner scripts")
 
     args, unknown = parser.parse_known_args()
     return parser, args, unknown

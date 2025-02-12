@@ -3,4 +3,6 @@ external_tools
 output
 wordlists
 ./.idea
+.idea/dataSources.xml
+.idea/vcs.xml
 
