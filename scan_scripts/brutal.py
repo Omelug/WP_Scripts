@@ -8,7 +8,7 @@ from input_parser import InputParser
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from wp_config import CONFIG
-from wp_db import get_session, Web, valid_wp_link, BrutalRun
+from wp_db import get_session, Web, valid_wp_link, BrutalRun, FileList
 from wp_log import print_e
 from scripts.wp_scanner import run_command
 
@@ -83,6 +83,15 @@ def get_file_hash(file_path):
             md5.update(chunk)
     return md5.hexdigest()
 
+async def ensure_file_list_entry(session, file_path, list_type):
+    file_list_entry = (await session.execute(
+        select(FileList).where(FileList.path == file_path)
+    )).scalars().first()
+
+    if not file_list_entry:
+        session.add(FileList(path=file_path, list_type=list_type))
+        await session.commit()
+
 # bruteforce wordpress site with wpscan
 # save to ./wordlists/wpscan_brutal + file_list table
 async def brutal(wp_link, user_list=None, pass_list=None, skip_no_xmlrcp=False, overwrite=False):
@@ -123,9 +132,15 @@ async def brutal(wp_link, user_list=None, pass_list=None, skip_no_xmlrcp=False, 
             print_e( f"{web_instance} is not a valid web instance")
             return
 
+        user_list_path = f"./{os.path.relpath(user_list, start=CONFIG['wp_hub']['folder_path'])}"
+        pass_list_path = f"./{os.path.relpath(pass_list, start=CONFIG['wp_hub']['folder_path'])}"
+
+        await ensure_file_list_entry(session, user_list_path, "user")
+        await ensure_file_list_entry(session, pass_list_path, "pass")
+
         brutal_run = BrutalRun(
-            pass_list=f"./{os.path.relpath(pass_list, start=CONFIG['wp_hub']['folder_path'])}",
-            user_list=f"./{os.path.relpath(user_list, start=CONFIG['wp_hub']['folder_path'])}",
+            pass_list=pass_list_path,
+            user_list=user_list_path,
             wp_link=wp_link,
             path=output_path
         )
